@@ -30,6 +30,7 @@
  */
 
 #include <nrfx.h>
+#include <sys/printk.h>
 
 #if NRFX_CHECK(NRFX_NFCT_ENABLED)
 
@@ -792,6 +793,18 @@ void nrfx_nfct_irq_handler(void)
                 (nrf_nfct_rx_frame_status_get() & NRFX_NFCT_FRAME_STATUS_RX_ALL_MASK);
             nrf_nfct_event_clear(NRF_NFCT_EVENT_RXERROR);
 
+            printk("Rx error (0x%x)\n", (unsigned int) nfct_evt.params.rx_frameend.rx_status);
+            if (nfct_evt.params.rx_frameend.rx_status)
+            {
+		printk("Data size: 0x%x\n", NRFX_NFCT_BITS_TO_BYTES(nrf_nfct_rx_bits_get(true)));
+                printk("Data size: 0x%x\n", nfct_evt.params.rx_frameend.rx_data.data_size);
+                for (uint32_t i = 0; i < 16; i++)
+                {
+                    printk("0x%x ", nfct_evt.params.rx_frameend.rx_data.p_data[i]);
+                }
+
+                printk("\n");
+            }
             NRFX_LOG_DEBUG("Rx error (0x%x)", (unsigned int) nfct_evt.params.rx_frameend.rx_status);
 
             /* Clear rx frame status */
@@ -855,6 +868,8 @@ void nrfx_nfct_irq_handler(void)
         {
             .evt_id = NRFX_NFCT_EVT_ERROR
         };
+
+        printk("Error 0x%x\n", (unsigned int) err_status);
 
         /* Clear FRAMEDELAYTIMEOUT error (expected HW behaviour) when SLP_REQ command was received. */
         if (err_status & NRF_NFCT_ERROR_FRAMEDELAYTIMEOUT_MASK)
